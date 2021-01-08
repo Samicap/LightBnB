@@ -37,12 +37,17 @@ pool.connect()
 
 const getUserWithEmail = function(email) {
   return pool.query(`
-  SELECT users.id
+  SELECT users.*
   FROM users
   WHERE email = $1
   `, [email])
   .then(res => {
-    return res.row
+    const user = res.rows[0];
+    if (user) {
+      return user;
+    } else {
+      return null;
+    }
   });
 };
 exports.getUserWithEmail = getUserWithEmail;
@@ -58,10 +63,19 @@ exports.getUserWithEmail = getUserWithEmail;
 
 const getUserWithId = function(id) {
   return pool.query(`
-  SELECT $1
+  SELECT users.*
   FROM users
+  WHERE id = $1
   `, [id])
-}
+  .then(res => {
+    const user = res.rows[0];
+    if (user) {
+      return user;
+    } else {
+      return null;
+    }
+  });
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -80,10 +94,13 @@ exports.getUserWithId = getUserWithId;
 const addUser = function(name, email, password) {
   return pool.query(`
   INSERT INTO users (name, email, password)
-  VALUES ('$1', '$2', '$3')
+  VALUES ($1, $2, $3)
+  RETURNING *
   `, [name, email, password])
   .then(res => {
-    return res.row
+    const user = res.rows[0];
+    console.log(user)
+    return user;
   });
 };
 exports.addUser = addUser;
@@ -129,7 +146,9 @@ exports.getAllReservations = getAllReservations;
 
 const getAllProperties = function(options, limit = 10) {
   return pool.query(`
-  SELECT * FROM properties
+  SELECT *
+  FROM properties
+  JOIN property_reviews ON property_id = properties.id
   LIMIT $1
   `, [limit])
   .then(res => {
@@ -155,10 +174,10 @@ exports.getAllProperties = getAllProperties;
 
 const addProperty = function(options, limit = 10) {
   return pool.query(`
-  SELECT properties.id
-  FROM properties
-  LIMIT $1
-  `, [limit])
+  INSERT INTO properties ()
+  VALUES $1
+  LIMIT $2
+  `, [options, limit])
   .then(res => {
     return res.rows;
   });
