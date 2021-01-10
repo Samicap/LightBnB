@@ -154,8 +154,28 @@ const getAllProperties = function(options, limit = 10) {
   `; 
 
   if (options.city) {
-    query.Params.push(`%{options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length} `;
+    queryParams.push(`%${options.city}%`);
+    queryString += `WHERE properties.city LIKE $${queryParams.length} `;
+  }
+
+  if (options.owner_id) {
+    queryParams.push(`${options.owner_id}`);
+    queryString += `AND owner_id LIKE $${queryParams.length} `;
+  }
+
+  if (options.minimum_price_per_night) {
+    queryParams.push(`${options.minimum_price_per_night}`);
+    queryString += `AND properties.cost_per_night >= $${queryParams.length}`;
+  }
+
+  if (options.maximum_price_per_night) {
+    queryParams.push(`${options.maximum_price_per_night}`);
+    queryString += `AND properties.cost_per_night <= $${queryParams.length}`;
+  }
+
+  if (options.minimum_rating) {
+    queryParams.push(`${options.minimum_rating}`);
+    queryString += `AND property_reviews.rating >= $${queryParams.length}`;
   }
 
   queryParams.push(limit);
