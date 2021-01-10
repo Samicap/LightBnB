@@ -99,7 +99,6 @@ const addUser = function(name, email, password) {
   `, [name, email, password])
   .then(res => {
     const user = res.rows[0];
-    console.log(user)
     return user;
   });
 };
@@ -116,14 +115,21 @@ exports.addUser = addUser;
 //   return getAllProperties(null, 2);
 // }
 
+
 const getAllReservations = function(guest_id, limit = 10) {
   return pool.query(`
-  SELECT count($1)
+  SELECT reservations.*, properties.*, avg(rating) AS average_rating
   FROM reservations
+  JOIN properties ON reservations.property_id = properties.id
+  JOIN property_reviews ON properties.id = property_reviews.property_id
+  WHERE reservations.guest_id = $1
+  GROUP BY properties.id, reservations.id
+  ORDER BY reservations.start_date
   LIMIT $2
   `, [guest_id, limit])
   .then(res => {
-    return res.rows;
+    let reservation = res.rows;
+    return reservation;
   });
 }
 exports.getAllReservations = getAllReservations;
@@ -136,25 +142,45 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-// const getAllProperties = function(options, limit = 10) {
-//   const limitedProperties = {};
-//   for (let i = 1; i <= limit; i++) {
-//     limitedProperties[i] = properties[i];
-//   }
-//   return Promise.resolve(limitedProperties);
-// }
 
 const getAllProperties = function(options, limit = 10) {
-  return pool.query(`
-  SELECT *
+
+  const queryParams = [];
+
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  JOIN property_reviews ON property_id = properties.id
-  LIMIT $1
-  `, [limit])
-  .then(res => {
-    // console.log(res.rows)
-    return res.rows;
-  });
+  JOIN property_reviews ON properties.id = property_id
+  `; 
+
+  if (options.city) {
+    query.Params.push(`%{options.city}%`);
+    queryString += `WHERE city LIKE $${queryParams.length} `;
+  }
+
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  console.log(queryString, queryParams);
+
+  return pool.query(queryString, queryParams)
+  .then(res => res.rows);
+
+  // return pool.query(`
+  // SELECT *
+  // FROM properties
+  // JOIN property_reviews ON property_id = properties.id
+  // WHERE city = options.city
+  // LIMIT $1
+  // `, [options, limit])
+  // .then(res => {
+  //   // console.log(res.rows)
+  //   return res.rows;
+  // });
 }
 
 exports.getAllProperties = getAllProperties;

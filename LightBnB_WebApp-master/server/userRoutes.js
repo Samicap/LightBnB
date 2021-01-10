@@ -60,6 +60,14 @@ module.exports = function(router, database) {
       return;
     }
 
+    // database.getAllReservations(userId)
+    //   .then(
+    //     reservations => {
+    //       console.log(reservations);
+    //       return;
+    //     }
+    //   )
+
     database.getUserWithId(userId)
       .then(user => {
         if (!user) {
